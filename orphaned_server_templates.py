@@ -8,7 +8,7 @@ from optparse import OptionParser
 from getpass import getpass
 from pprint import pprint
 
-from rightscale import get_all_servers, get_all_server_templates
+from rightscale import RightScale
 
 
 def parse_args():
@@ -25,7 +25,7 @@ def parse_args():
         help='RightScale username')
     opt_parser.add_option(
         '-a', '--account',
-        dest='account_id',
+        dest='account',
         action='store', type='int',
         help='RightScale account ID')
     opt_parser.add_option(
@@ -45,17 +45,18 @@ def parse_args():
     else:
         password = getpass('RightScale Password: ')
     # If we do not have the account ID, prompt for it
-    if opts.account_id:
-        account_id = opts.account_id
+    if opts.account:
+        account = opts.account
     else:
-        account_id = raw_input('RightScale Account ID: ')
-    return account_id, username, password, opts.verbose
+        account = raw_input('RightScale Account ID: ')
+    return account, username, password, opts.verbose
 
 
 def main():
-    account_id, username, password, verbose = parse_args()
-    all_server_templates = get_all_server_templates(account_id, username, password)
-    all_servers = get_all_servers(account_id, username, password)
+    account, username, password, verbose = parse_args()
+    rightscale = RightScale(account, username, password)
+    all_server_templates = rightscale.server_templates
+    all_servers = rightscale.servers
 
     # Determine all the server templates used by servers
     all_server_template_hrefs_used = []
