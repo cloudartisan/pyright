@@ -6,6 +6,7 @@ import base64
 import json
 from optparse import OptionParser
 from getpass import getpass
+from pprint import pprint
 
 from rightscale import get_all_servers, get_all_server_templates
 
@@ -27,6 +28,11 @@ def parse_args():
         dest='account_id',
         action='store', type='int',
         help='RightScale account ID')
+    opt_parser.add_option(
+        '-v', '--verbose',
+        dest='verbose',
+        action='store_true', default=False,
+        help='Enable verbose output')
     opts, args = opt_parser.parse_args()
     # If we do not have the username, prompt for it
     if opts.username:
@@ -43,11 +49,11 @@ def parse_args():
         account_id = opts.account_id
     else:
         account_id = raw_input('RightScale Account ID: ')
-    return account_id, username, password
+    return account_id, username, password, opts.verbose
 
 
 def main():
-    account_id, username, password = parse_args()
+    account_id, username, password, verbose = parse_args()
     all_server_templates = get_all_server_templates(account_id, username, password)
     all_servers = get_all_servers(account_id, username, password)
 
@@ -59,12 +65,18 @@ def main():
     # Determine all the orphaned server templates
     orphaned_server_templates = []
     for server_template in all_server_templates:
+        if not server_template['is_head_version']:
+            continue
         if server_template['href'] not in all_server_template_hrefs_used:
             orphaned_server_templates.append(server_template)
 
     # Display all the orphaned server templates
     for server_template in orphaned_server_templates:
-        print '%s|%s' % (server_template['nickname'], server_template['href'])
+        if verbose:
+            pprint(server_template)
+            print
+        else:
+            print server_template['href']
 
 
 if __name__ == '__main__':
